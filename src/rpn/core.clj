@@ -23,14 +23,21 @@
 (defn sum [stack]
   (list (print-return (reduce + stack))))
 
+(defn check-stack [stack n]
+  (>= (count stack) n))
+
 (defn calculate [op stack]
   (cond
     (re-find #"\+|-|\*|/" op)
-      (do-simple-math op stack)
+      (if (check-stack stack 2)
+        (do-simple-math op stack)
+        (do (println "not enough operands on stack") stack))
     (= (lower-case op) "p")
       (print-return stack)
     (= (lower-case op) "sum")
-      (sum stack)
+      (if (check-stack stack 1)
+        (sum stack)
+        (do (println "no operand on stack") stack))
     (str->num op)
       (conj stack (str->num op))
     :else
