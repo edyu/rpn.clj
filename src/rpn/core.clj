@@ -8,7 +8,11 @@
     (let [n (read-string str)]
       (if (number? n) n nil))))
 
-(defn print-return [x]
+(defn println-err [& args]
+  (binding [*out* *err*]
+    (apply println args)))
+
+(defn prn-return [x]
   (prn x)
   x)
 
@@ -16,13 +20,13 @@
   (try
     (let [op-map { "+" +, "-" -, "*" *, "/" / }]
       (conj (drop 2 stack)
-            (print-return (apply (op-map op) (map #(str->num %) (take 2 stack))))))
+            (prn-return (apply (op-map op) (map #(str->num %) (take 2 stack))))))
     (catch Exception e
       (println e)
       stack)))
 
 (defn sum [stack]
-  (list (print-return (reduce + stack))))
+  (list (prn-return (reduce + stack))))
 
 (defn check-stack [stack n]
   (>= (count stack) n))
@@ -32,19 +36,19 @@
     (re-find #"\+|-|\*|/" op)
       (if (check-stack stack 2)
         (do-simple-math op stack)
-        (do (println "not enough operands on stack") stack))
+        (do (println-err "not enough operands on stack") stack))
     (= (lower-case op) "p")
-      (print-return stack)
+      (prn-return stack)
     (= (lower-case op) "sum")
       (if (check-stack stack 1)
         (sum stack)
-        (do (println "no operand on stack") stack))
+        (do (println-err "no operand on stack") stack))
     (= (lower-case op) "e")
-      (conj stack (print-return (. Math E)))
+      (conj stack (prn-return (. Math E)))
     (= (lower-case op) "pi")
-      (conj stack (print-return (. Math PI)))
+      (conj stack (prn-return (. Math PI)))
     (str->num op)
-      (conj stack (print-return (str->num op)))
+      (conj stack (prn-return (str->num op)))
     :else
       stack))
 
