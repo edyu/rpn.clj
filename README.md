@@ -1,13 +1,14 @@
 # rpn
 
-A Clojure library designed to ... well, that part is up to you.
+A Clojure program that implements a reverse polish calculator.
 
 ## Usage
 
-FIXME
+To run the program just type "lein run" on the console.
 
 ## License
 
-Copyright © 2013 FIXME
+Copyright © 2013 Ed Yu
 
 Distributed under the Eclipse Public License, the same as Clojure.
+
