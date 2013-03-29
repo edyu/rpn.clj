@@ -1,5 +1,5 @@
 (ns rpn.core)
-(use '[clojure.string :only (split)])
+(use '[clojure.string :only (lower-case split)])
 
 (defn str->num [str]
   (if (number? str)
@@ -13,15 +13,23 @@
 
 (defn do-simple-math [op stack]
   (try
-    (print-return (apply (eval (symbol op)) (map #(str->num %) (take 2 stack))))
-    (catch Exception e (println e))))
+    (conj (drop 2 stack)
+          (print-return (apply (eval (symbol op)) (map #(str->num %) (take 2 stack)))))
+    (catch Exception e
+      (println e)
+      stack)))
+
+(defn sum [stack]
+  (list (print-return (reduce + stack))))
 
 (defn calculate [op stack]
   (cond
     (re-find #"\+|-|\*|/" op)
-      (conj (drop 2 stack) (do-simple-math op stack))
-    (= op "p")
+      (do-simple-math op stack)
+    (= (lower-case op) "p")
       (print-return stack)
+    (= (lower-case op) "sum")
+      (sum stack)
     (str->num op)
       (conj stack (str->num op))
     :else
