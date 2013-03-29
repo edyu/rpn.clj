@@ -13,8 +13,9 @@
 
 (defn do-simple-math [op stack]
   (try
-    (conj (drop 2 stack)
-          (print-return (apply (eval (symbol op)) (map #(str->num %) (take 2 stack)))))
+    (let [op-map { "+" +, "-" -, "*" *, "/" / }]
+      (conj (drop 2 stack)
+            (print-return (apply (op-map op) (map #(str->num %) (take 2 stack))))))
     (catch Exception e
       (println e)
       stack)))
