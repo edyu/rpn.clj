@@ -1,5 +1,5 @@
 (ns rpn.core)
-(use '[clojure.string :only (lower-case split)])
+(use '[clojure.string :only (blank? lower-case split)])
 
 (defn str->num [str]
   (if (number? str)
@@ -48,12 +48,12 @@
   (read-line))
 
 (defn runloop []
-  (loop [line (read-prompt)
-         stack ()]
-    (if (or (nil? line) (= line "q"))
-      (println "goodbye")
-      (let [ops (split line #"\s+")
-            newstack (process-line ops stack)]
-        (recur (read-prompt) newstack)))))
+  (loop [stack ()]
+    (let [line (read-prompt)]
+      (if (or (nil? line) (= line "q"))
+        (println "goodbye")
+        (if (not (blank? line))
+          (recur (process-line (split line #"\s+") stack))
+          (recur stack))))))
 
 (defn -main [] (runloop))
