@@ -8,7 +8,7 @@
       (if (number? n) n nil))))
 
 (defn print-return [x]
-  (println x)
+  (prn x)
   x)
 
 (defn do-simple-math [op stack]
@@ -20,10 +20,12 @@
   (cond
     (re-find #"\+|-|\*|/" op)
       (conj (drop 2 stack) (do-simple-math op stack))
+    (= op "p")
+      (print-return stack)
+    (str->num op)
+      (conj stack (str->num op))
     :else
-      (do
-        (println op)
-        (conj stack op))))
+      stack))
 
 (defn process-line [line stack]
   (letfn [(process [op stack line]
