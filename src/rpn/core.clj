@@ -1,5 +1,6 @@
 (ns rpn.core)
 (use '[clojure.string :only (blank? lower-case split)])
+(import '[java.lang Math])
 
 (defn str->num [str]
   (if (number? str)
@@ -38,8 +39,12 @@
       (if (check-stack stack 1)
         (sum stack)
         (do (println "no operand on stack") stack))
+    (= (lower-case op) "e")
+      (conj stack (print-return (. Math E)))
+    (= (lower-case op) "pi")
+      (conj stack (print-return (. Math PI)))
     (str->num op)
-      (conj stack (str->num op))
+      (conj stack (print-return (str->num op)))
     :else
       stack))
 
