@@ -1,4 +1,5 @@
 (ns rpn.core)
+(use '[clojure.string :only (split)])
 
 (defn str->num [str]
   (if (number? str)
@@ -6,30 +7,43 @@
     (let [n (read-string str)]
       (if (number? n) n nil))))
 
-(defn do-simple-math [stack]
+(defn print-return [x]
+  (println x)
+  x)
+
+(defn do-simple-math [op stack]
   (try
-    (apply (eval (symbol (first stack))) (map #(str->num %) (take 2 (rest stack))))
+    (print-return (apply (eval (symbol op)) (map #(str->num %) (take 2 stack))))
     (catch Exception e (println e))))
 
-(defn calculate [stack]
-  (let [op (first stack)]
-    (cond
-      (re-find #"\+|-|\*|/" op)
-        (conj (drop 3 stack)
-          (do-simple-math stack))
-      :else
-        stack)))
+(defn calculate [op stack]
+  (cond
+    (re-find #"\+|-|\*|/" op)
+      (conj (drop 2 stack) (do-simple-math op stack))
+    :else
+      (do
+        (println op)
+        (conj stack op))))
+
+(defn process-line [line stack]
+  (letfn [(process [op stack line]
+            (if (nil? op)
+              stack
+              (recur (first line) (calculate op stack) (rest line))))]
+    (process (first line) stack (rest line))))
+
+(defn read-prompt []
+  (print "> ")
+  (flush)
+  (read-line))
 
 (defn runloop []
-  (loop [line (read-line)
+  (loop [line (read-prompt)
          stack ()]
     (if (or (nil? line) (= line "q"))
       (println "goodbye")
-      (let [op line
-            stack (calculate (conj stack op))]
-        (do
-          (println (first stack))
-          (println (str "stack: " stack))
-          (recur (read-line) stack))))))
+      (let [ops (split line #"\s+")
+            newstack (process-line ops stack)]
+        (recur (read-prompt) newstack)))))
 
 (defn -main [] (runloop))
