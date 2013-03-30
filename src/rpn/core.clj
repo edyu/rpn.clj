@@ -24,7 +24,9 @@
 (defn get-static-methods [jclass]
   (apply hash-map
          (flatten
-           (for [m (filter #(. Modifier isStatic (.getModifiers %)) (.getMethods jclass))]
+           (for [m (remove #(= "float" (.getName (.getReturnType %)))
+                           (filter #(. Modifier isStatic (.getModifiers %))
+                                    (.getMethods jclass)))]
              (vector (.getName m) m)))))
 
 (defn get-math-funcs []
@@ -42,11 +44,9 @@
   (let [arity (get-method-arity func)]
     (if (check-stack stack arity)
       (try
-        (conj (drop arity stack)
-              (prn-ret (.invoke func nil
-                                (object-array
-                                  (prn-ret (reverse(map ratio->double
-                                                        (take arity stack))))))))
+        (let [args (object-array (reverse (map ratio->double (take arity stack))))]
+          (conj (drop arity stack)
+                (prn-ret (.invoke func nil args))))
         (catch Exception e
           (println-err e)
           stack))
