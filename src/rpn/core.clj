@@ -12,10 +12,13 @@
     (let [n (read-string str)]
       (if (number? n) n nil))))
 
-(defn println-err [& args]
+(defn prn-err [& args]
   (binding [*out* *err*]
-    (apply println args)
+    (apply prn args)
     (flush)))
+
+(defn prn-exp [e]
+  (prn-err (.getMessage e)))
 
 (defn prn-ret [x]
   (prn x)
@@ -37,59 +40,81 @@
     (double x)
     x))
 
+(defn abs [x]
+  (if (< x 0)
+    (- x)
+    x))
+
 (defn get-method-arity [jmethod]
   (count (.getParameterTypes jmethod)))
 
 (defn do-math-func [func stack]
   (let [arity (get-method-arity func)]
     (if (check-stack stack arity)
-      (try
-        (let [args (object-array (reverse (map ratio->double (take arity stack))))]
-          (conj (drop arity stack)
-                (prn-ret (.invoke func nil args))))
-        (catch Exception e
-          (println-err e)
-          stack))
-      (do (println-err "not enough operands on stack") stack))))
+      (let [args (object-array (reverse (map #(double %) (take arity stack))))]
+        (conj (drop arity stack)
+              (prn-ret (.invoke func nil args))))
+      (do (prn-err "not enough operands on stack") stack))))
 
 (defn do-simple-math [op stack]
-  (try
-    (let [op-map { "+" +, "-" -, "*" *, "/" / }
-          arity 2]
-      (conj (drop arity stack)
-            (prn-ret (apply (op-map op)
-                               (map #(str->num %) (reverse (take arity stack)))))))
-    (catch Exception e
-      (println-err e)
-      stack)))
+  (let [op-map { "+" +, "-" -, "*" *, "/" / }
+        arity 2]
+    (conj (drop arity stack)
+          (prn-ret (apply (op-map op)
+                             (map #(str->num %) (reverse (take arity stack))))))))
 
 (defn sum [stack]
   (list (prn-ret (reduce + stack))))
 
+(defn fac [stack]
+  (let [n (abs (bigint (first stack)))]
+    (conj (drop 1 stack)
+          (prn-ret (reduce * (range 2 (inc n)))))))
+
+(defn fibo []
+    (map first (iterate (fn [[a b]] [b (+ a b)]) [0N 1N])))
+
+(defn fib [stack]
+  (let [n (abs (int (first stack)))]
+    (conj (drop 1 stack)
+          (prn-ret (nth (fibo) n)))))
+
 (defn calculate [op stack]
-  (cond
-    (re-matches #"^\+|-|\*|/$" op)
-      (if (check-stack stack 2)
-        (do-simple-math op stack)
-        (do (println-err "not enough operands on stack") stack))
-    (= (lower-case op) "p")
-      (prn-ret stack)
-    (= (lower-case op) "m")
-      (do (prn (keys (get-math-funcs))) stack)
-    (= (lower-case op) "sum")
-      (if (check-stack stack 1)
-        (sum stack)
-        (do (println-err "no operand on stack") stack))
-    (= (lower-case op) "e")
-      (conj stack (prn-ret (. Math E)))
-    (= (lower-case op) "pi")
-      (conj stack (prn-ret (. Math PI)))
-    (str->num op)
-      (conj stack (prn-ret (str->num op)))
-    (contains? (apply hash-set (keys (get-math-funcs))) (lower-case op))
-      (do-math-func ((get-math-funcs) (lower-case op)) stack)
-    :else
-      stack))
+  (try
+    (cond
+      (re-matches #"^\+|-|\*|/$" op)
+        (if (check-stack stack 2)
+          (do-simple-math op stack)
+          (do (prn-err "not enough operands on stack") stack))
+      (= (lower-case op) "p")
+        (prn-ret stack)
+      (= (lower-case op) "m")
+        (do (prn (keys (get-math-funcs))) stack)
+      (= (lower-case op) "sum")
+        (if (check-stack stack 1)
+          (sum stack)
+          (do (prn-err "no operand on stack") stack))
+      (= op "!")
+        (if (check-stack stack 1)
+          (fac stack)
+          (do (prn-err "no operand on stack") stack))
+      (= (lower-case op) "fib")
+        (if (check-stack stack 1)
+          (fib stack)
+          (do (prn-err "no operand on stack") stack))
+      (= (lower-case op) "e")
+        (conj stack (prn-ret (. Math E)))
+      (= (lower-case op) "pi")
+        (conj stack (prn-ret (. Math PI)))
+      (str->num op)
+        (conj stack (prn-ret (str->num op)))
+      (contains? (apply hash-set (keys (get-math-funcs))) (lower-case op))
+        (do-math-func ((get-math-funcs) (lower-case op)) stack)
+      :else
+        stack)
+    (catch Exception e
+      (prn-exp e)
+      stack)))
 
 (defn process-line [line stack]
   (letfn [(process [op stack line]
