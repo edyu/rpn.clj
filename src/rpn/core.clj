@@ -17,7 +17,7 @@
     (apply println args)
     (flush)))
 
-(defn prn-return [x]
+(defn prn-ret [x]
   (prn x)
   x)
 
@@ -30,6 +30,11 @@
 (defn get-math-funcs []
   (get-static-methods Math))
 
+(defn ratio->double [x]
+  (if (ratio? x)
+    (double x)
+    x))
+
 (defn get-method-arity [jmethod]
   (count (.getParameterTypes jmethod)))
 
@@ -38,10 +43,10 @@
     (if (check-stack stack arity)
       (try
         (conj (drop arity stack)
-              (prn-return (. func invoke nil
-                             (object-array (prn-return(reverse
-                                                        (map #(double %)
-                                                             (take arity stack))))))))
+              (prn-ret (.invoke func nil
+                                (object-array
+                                  (prn-ret (reverse(map ratio->double
+                                                        (take arity stack))))))))
         (catch Exception e
           (println-err e)
           stack))
@@ -52,23 +57,23 @@
     (let [op-map { "+" +, "-" -, "*" *, "/" / }
           arity 2]
       (conj (drop arity stack)
-            (prn-return (apply (op-map op)
+            (prn-ret (apply (op-map op)
                                (map #(str->num %) (reverse (take arity stack)))))))
     (catch Exception e
       (println-err e)
       stack)))
 
 (defn sum [stack]
-  (list (prn-return (reduce + stack))))
+  (list (prn-ret (reduce + stack))))
 
 (defn calculate [op stack]
   (cond
-    (re-find #"\+|-|\*|/" op)
+    (re-matches #"^\+|-|\*|/$" op)
       (if (check-stack stack 2)
         (do-simple-math op stack)
         (do (println-err "not enough operands on stack") stack))
     (= (lower-case op) "p")
-      (prn-return stack)
+      (prn-ret stack)
     (= (lower-case op) "m")
       (do (prn (keys (get-math-funcs))) stack)
     (= (lower-case op) "sum")
@@ -76,11 +81,11 @@
         (sum stack)
         (do (println-err "no operand on stack") stack))
     (= (lower-case op) "e")
-      (conj stack (prn-return (. Math E)))
+      (conj stack (prn-ret (. Math E)))
     (= (lower-case op) "pi")
-      (conj stack (prn-return (. Math PI)))
+      (conj stack (prn-ret (. Math PI)))
     (str->num op)
-      (conj stack (prn-return (str->num op)))
+      (conj stack (prn-ret (str->num op)))
     (contains? (apply hash-set (keys (get-math-funcs))) (lower-case op))
       (do-math-func ((get-math-funcs) (lower-case op)) stack)
     :else
