@@ -25,12 +25,11 @@
   x)
 
 (defn get-static-methods [jclass]
-  (apply hash-map
-         (flatten
-           (for [m (remove #(= "float" (.getName (.getReturnType %)))
-                           (filter #(. Modifier isStatic (.getModifiers %))
-                                    (.getMethods jclass)))]
-             (vector (.getName m) m)))))
+  (into {}
+        (for [m (remove #(= "float" (.getName (.getReturnType %)))
+                        (filter #(. Modifier isStatic (.getModifiers %))
+                                (.getMethods jclass)))]
+          (vector (.getName m) m))))
 
 (defn get-math-funcs []
   (get-static-methods Math))
