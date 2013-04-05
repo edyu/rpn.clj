@@ -10,7 +10,7 @@
   (if (number? str)
     str
     (let [n (read-string str)]
-      (if (number? n) n nil))))
+      (when (number? n) n))))
 
 (defn prn-err [& args]
   (binding [*out* *err*]
