@@ -56,7 +56,7 @@
       (do (prn-err "not enough operands on stack") stack))))
 
 (defn do-simple-math [op stack]
-  (let [op-map { "+" +, "-" -, "*" *, "/" / }
+  (let [op-map { "+" +', "-" -', "*" *', "/" / }
         arity 2]
     (conj (drop arity stack)
           (prn-ret (apply (op-map op)
